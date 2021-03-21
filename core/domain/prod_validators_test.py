@@ -19,12 +19,13 @@
 from __future__ import absolute_import  # pylint: disable=import-only-modules
 from __future__ import unicode_literals  # pylint: disable=import-only-modules
 
+import ast
 import datetime
 
 from constants import constants
+from core.domain import exp_domain
+from core.domain import exp_services
 from core.domain import prod_validation_jobs_one_off
-<<<<<<< HEAD
-<<<<<<< HEAD
 from core.domain import rating_services
 from core.domain import rights_domain
 from core.domain import rights_manager
@@ -32,20 +33,6 @@ from core.domain import story_domain
 from core.domain import story_services
 from core.domain import taskqueue_services
 from core.domain import user_services
-=======
-=======
->>>>>>> upstream/develop
-from core.domain import skill_domain
-from core.domain import skill_services
-from core.domain import story_domain
-from core.domain import story_services
-from core.domain import subtopic_page_domain
-from core.domain import topic_domain
-from core.domain import topic_services
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
 from core.platform import models
 from core.tests import test_utils
 import feconf
@@ -57,14 +44,16 @@ USER_EMAIL = 'useremail@example.com'
 USER_NAME = 'username'
 
 (
-    subtopic_models, topic_models, user_models
+    collection_models, exp_models, feedback_models,
+    story_models, subtopic_models,
+    suggestion_models, topic_models, user_models
 ) = models.Registry.import_models([
-    models.NAMES.subtopic, models.NAMES.topic, models.NAMES.user
+    models.NAMES.collection, models.NAMES.exploration, models.NAMES.feedback,
+    models.NAMES.story, models.NAMES.subtopic,
+    models.NAMES.suggestion, models.NAMES.topic, models.NAMES.user
 ])
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 class ExplorationModelValidatorTests(test_utils.AuditJobsTestBase):
 
     def setUp(self):
@@ -102,106 +91,6 @@ class ExplorationModelValidatorTests(test_utils.AuditJobsTestBase):
 
         expected_output = [
             u'[u\'fully-validated ExplorationModel\', 3]']
-=======
-=======
->>>>>>> upstream/develop
-class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
-
-    def setUp(self):
-        super(SubtopicPageModelValidatorTests, self).setUp()
-
-        self.signup(self.OWNER_EMAIL, self.OWNER_USERNAME)
-        self.owner_id = self.get_user_id_from_email(self.OWNER_EMAIL)
-
-        self.signup(self.ADMIN_EMAIL, self.ADMIN_USERNAME)
-        self.admin_id = self.get_user_id_from_email(self.ADMIN_EMAIL)
-        self.set_admins([self.ADMIN_USERNAME])
-
-        topics = [topic_domain.Topic.create_default_topic(
-            '%s' % i,
-            'topic%s' % i,
-            'abbrev-%s' % chr(120 + i),
-            'description%s' % i) for i in python_utils.RANGE(3)]
-        rubrics = [
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[0], ['Explanation 1']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[1], ['Explanation 2']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[2], ['Explanation 3'])]
-        skills = [
-            skill_domain.Skill.create_default_skill(
-                '%s' % i, 'skill%s' % i, rubrics)
-            for i in python_utils.RANGE(9)]
-
-        for skill in skills:
-            skill_services.save_new_skill(self.owner_id, skill)
-
-        stories = [story_domain.Story.create_default_story(
-            '%s' % i,
-            'title %d',
-            'description %d' % i,
-            '%s' % (python_utils.divide(i, 2)),
-            'title-%s' % chr(97 + i)
-        ) for i in python_utils.RANGE(6)]
-
-        for story in stories:
-            story_services.save_new_story(self.owner_id, story)
-
-        language_codes = ['ar', 'en', 'en']
-        for index, topic in enumerate(topics):
-            topic.language_code = language_codes[index]
-            topic.add_additional_story('%s' % (index * 2))
-            topic.add_canonical_story('%s' % (index * 2 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 2))
-            topic_services.save_new_topic(self.owner_id, topic)
-            topic_services.update_topic_and_subtopic_pages(
-                self.owner_id, '%s' % index, [topic_domain.TopicChange({
-                    'cmd': 'add_subtopic',
-                    'title': 'subtopic1',
-                    'subtopic_id': 1
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3)
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3 + 1)
-                })], 'Changes.')
-
-        self.model_instance_0 = (
-            subtopic_models.SubtopicPageModel.get_by_id('0-1'))
-        self.model_instance_1 = (
-            subtopic_models.SubtopicPageModel.get_by_id('1-1'))
-        self.model_instance_2 = (
-            subtopic_models.SubtopicPageModel.get_by_id('2-1'))
-
-        self.job_class = (
-            prod_validation_jobs_one_off.SubtopicPageModelAuditOneOffJob)
-
-    def test_standard_operation(self):
-        topic_services.update_topic_and_subtopic_pages(
-            self.owner_id, '0', [subtopic_page_domain.SubtopicPageChange({
-                'cmd': 'update_subtopic_page_property',
-                'property_name': 'page_contents_html',
-                'subtopic_id': 1,
-                'new_value': {
-                    'html': '<p>html</p>',
-                    'content_id': 'content'
-                },
-                'old_value': {}
-            })], 'Changes.')
-        expected_output = [
-            u'[u\'fully-validated SubtopicPageModel\', 3]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=False, literal_eval=False)
 
@@ -210,8 +99,6 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
             self.model_instance_0.last_updated + datetime.timedelta(days=1))
         self.model_instance_0.commit(
             feconf.SYSTEM_COMMITTER_ID, 'created_on test', [])
-<<<<<<< HEAD
-<<<<<<< HEAD
         expected_output = [(
             u'[u\'failed validation check for time field relation check '
             'of ExplorationModel\', '
@@ -222,25 +109,6 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
                 self.model_instance_0.created_on,
                 self.model_instance_0.last_updated
             ), u'[u\'fully-validated ExplorationModel\', 2]']
-=======
-=======
->>>>>>> upstream/develop
-        expected_output = [
-            (
-                u'[u\'failed validation check for time field relation check '
-                'of SubtopicPageModel\', '
-                '[u\'Entity id %s: The created_on field has a value '
-                '%s which is greater than the value '
-                '%s of last_updated field\']]') % (
-                    self.model_instance_0.id,
-                    self.model_instance_0.created_on,
-                    self.model_instance_0.last_updated
-                ),
-            u'[u\'fully-validated SubtopicPageModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
@@ -248,8 +116,6 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
         self.model_instance_1.delete(feconf.SYSTEM_COMMITTER_ID, 'delete')
         self.model_instance_2.delete(feconf.SYSTEM_COMMITTER_ID, 'delete')
         expected_output = [
-<<<<<<< HEAD
-<<<<<<< HEAD
             '[u\'fully-validated ExplorationModel\', 2]',
             (
                 u'[u\'failed validation check for current time check of '
@@ -258,22 +124,6 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
                 'value %s which is greater than the time when '
                 'the job was run\']]'
             ) % (self.model_instance_0.id, self.model_instance_0.last_updated)]
-=======
-=======
->>>>>>> upstream/develop
-            '[u\'fully-validated SubtopicPageModel\', 2]',
-            (
-                '[u\'failed validation check for current time check of '
-                'SubtopicPageModel\', '
-                '[u\'Entity id %s: The last_updated field has a '
-                'value %s which is greater '
-                'than the time when the job was run\']]'
-            ) % (self.model_instance_0.id, self.model_instance_0.last_updated)
-        ]
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
 
         mocked_datetime = datetime.datetime.utcnow() - datetime.timedelta(
             hours=13)
@@ -281,8 +131,6 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
             self.run_job_and_check_output(
                 expected_output, sort=True, literal_eval=False)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     def test_model_with_invalid_exploration_schema(self):
         expected_output = [
             (
@@ -292,32 +140,12 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
                 'error Invalid language_code: %s\']]'
             ) % (self.model_instance_0.id, self.model_instance_0.language_code),
             u'[u\'fully-validated ExplorationModel\', 2]']
-=======
-=======
->>>>>>> upstream/develop
-    def test_model_with_invalid_subtopic_page_schema(self):
-        self.model_instance_0.language_code = 'ar'
-        self.model_instance_0.commit(self.owner_id, '', [])
-        expected_output = [
-            (
-                u'[u\'failed validation check for domain object check of '
-                'SubtopicPageModel\', '
-                '[u\'Entity id %s: Entity fails domain validation with the '
-                'error Invalid language code: %s\']]'
-            ) % (self.model_instance_0.id, self.model_instance_0.language_code),
-            u'[u\'fully-validated SubtopicPageModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         with self.swap(
             constants, 'SUPPORTED_CONTENT_LANGUAGES', [{
                 'code': 'en', 'description': 'English'}]):
             self.run_job_and_check_output(
                 expected_output, sort=True, literal_eval=False)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     def test_private_exploration_with_missing_interaction_in_state(self):
         expected_output = [
             u'[u\'fully-validated ExplorationModel\', 3]']
@@ -347,48 +175,10 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
             })], 'Changes.')
         exp_models.ExplorationCommitLogEntryModel.get_by_id(
             'exploration-0-1').delete()
-=======
-=======
->>>>>>> upstream/develop
-    def test_missing_topic_model_failure(self):
-        topic_models.TopicModel.get_by_id('0').delete(
-            feconf.SYSTEM_COMMITTER_ID, '', [])
-
-        expected_output = [
-            (
-                u'[u\'failed validation check for topic_ids field '
-                'check of SubtopicPageModel\', '
-                '[u"Entity id 0-1: based on field topic_ids having value '
-                '0, expected model TopicModel with id 0 but it '
-                'doesn\'t exist"]]'),
-            u'[u\'fully-validated SubtopicPageModel\', 2]']
-        self.run_job_and_check_output(
-            expected_output, sort=True, literal_eval=False)
-
-    def test_missing_subtopic_page_commit_log_entry_model_failure(self):
-        topic_services.update_topic_and_subtopic_pages(
-            self.owner_id, '0', [subtopic_page_domain.SubtopicPageChange({
-                'cmd': 'update_subtopic_page_property',
-                'property_name': 'page_contents_html',
-                'subtopic_id': 1,
-                'new_value': {
-                    'html': '<p>html</p>',
-                    'content_id': 'content'
-                },
-                'old_value': {}
-            })], 'Changes.')
-        subtopic_models.SubtopicPageCommitLogEntryModel.get_by_id(
-            'subtopicpage-0-1-1').delete()
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
 
         expected_output = [
             (
                 u'[u\'failed validation check for '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'exploration_commit_log_entry_ids field check of '
                 'ExplorationModel\', '
                 '[u"Entity id 0: based on field '
@@ -426,27 +216,10 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
                 'having value 0, expected model ExplorationRightsModel '
                 'with id 0 but it doesn\'t exist"]]'),
             u'[u\'fully-validated ExplorationModel\', 2]']
-=======
-=======
->>>>>>> upstream/develop
-                'subtopic_page_commit_log_entry_ids field check of '
-                'SubtopicPageModel\', '
-                '[u"Entity id 0-1: based on field '
-                'subtopic_page_commit_log_entry_ids having value '
-                'subtopicpage-0-1-1, expected model '
-                'SubtopicPageCommitLogEntryModel '
-                'with id subtopicpage-0-1-1 but it doesn\'t exist"]]'),
-            u'[u\'fully-validated SubtopicPageModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
     def test_missing_snapshot_metadata_model_failure(self):
-<<<<<<< HEAD
-<<<<<<< HEAD
         exp_models.ExplorationSnapshotMetadataModel.get_by_id(
             '0-1').delete()
         expected_output = [
@@ -457,29 +230,10 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
                 'value 0-1, expected model ExplorationSnapshotMetadataModel '
                 'with id 0-1 but it doesn\'t exist"]]'),
             u'[u\'fully-validated ExplorationModel\', 2]']
-=======
-=======
->>>>>>> upstream/develop
-        subtopic_models.SubtopicPageSnapshotMetadataModel.get_by_id(
-            '0-1-1').delete()
-        expected_output = [
-            (
-                u'[u\'failed validation check for snapshot_metadata_ids '
-                'field check of SubtopicPageModel\', '
-                '[u"Entity id 0-1: based on field snapshot_metadata_ids having '
-                'value 0-1-1, expected model SubtopicPageSnapshotMetadataModel '
-                'with id 0-1-1 but it doesn\'t exist"]]'),
-            u'[u\'fully-validated SubtopicPageModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
     def test_missing_snapshot_content_model_failure(self):
-<<<<<<< HEAD
-<<<<<<< HEAD
         exp_models.ExplorationSnapshotContentModel.get_by_id(
             '0-1').delete()
         expected_output = [
@@ -490,29 +244,10 @@ class SubtopicPageModelValidatorTests(test_utils.AuditJobsTestBase):
                 'value 0-1, expected model ExplorationSnapshotContentModel '
                 'with id 0-1 but it doesn\'t exist"]]'),
             u'[u\'fully-validated ExplorationModel\', 2]']
-=======
-=======
->>>>>>> upstream/develop
-        subtopic_models.SubtopicPageSnapshotContentModel.get_by_id(
-            '0-1-1').delete()
-        expected_output = [
-            (
-                u'[u\'failed validation check for snapshot_content_ids '
-                'field check of SubtopicPageModel\', '
-                '[u"Entity id 0-1: based on field snapshot_content_ids having '
-                'value 0-1-1, expected model SubtopicPageSnapshotContentModel '
-                'with id 0-1-1 but it doesn\'t exist"]]'),
-            u'[u\'fully-validated SubtopicPageModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 class ExplorationSnapshotMetadataModelValidatorTests(
         test_utils.AuditJobsTestBase):
 
@@ -559,117 +294,6 @@ class ExplorationSnapshotMetadataModelValidatorTests(
             })], 'Changes.')
         expected_output = [
             u'[u\'fully-validated ExplorationSnapshotMetadataModel\', 4]']
-=======
-=======
->>>>>>> upstream/develop
-class SubtopicPageSnapshotMetadataModelValidatorTests(
-        test_utils.AuditJobsTestBase):
-
-    def setUp(self):
-        super(SubtopicPageSnapshotMetadataModelValidatorTests, self).setUp()
-        self.signup(self.OWNER_EMAIL, self.OWNER_USERNAME)
-        self.owner_id = self.get_user_id_from_email(self.OWNER_EMAIL)
-
-        self.signup(USER_EMAIL, USER_NAME)
-        self.user_id = self.get_user_id_from_email(USER_EMAIL)
-
-        self.signup(self.ADMIN_EMAIL, self.ADMIN_USERNAME)
-        self.admin_id = self.get_user_id_from_email(self.ADMIN_EMAIL)
-        self.set_admins([self.ADMIN_USERNAME])
-
-        topics = [topic_domain.Topic.create_default_topic(
-            '%s' % i,
-            'topic%s' % i,
-            'abbrev-%s' % chr(120 + i),
-            'description%s' % i) for i in python_utils.RANGE(3)]
-        rubrics = [
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[0], ['Explanation 1']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[1], ['Explanation 2']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[2], ['Explanation 3'])]
-        skills = [
-            skill_domain.Skill.create_default_skill(
-                '%s' % i, 'skill%s' % i, rubrics)
-            for i in python_utils.RANGE(9)]
-
-        for skill in skills:
-            skill_services.save_new_skill(self.owner_id, skill)
-
-        stories = [story_domain.Story.create_default_story(
-            '%s' % i,
-            'title %d',
-            'description %d' % i,
-            '%s' % (python_utils.divide(i, 2)),
-            'title-%s' % chr(97 + i)
-        ) for i in python_utils.RANGE(6)]
-
-        for story in stories:
-            story_services.save_new_story(self.owner_id, story)
-
-        language_codes = ['ar', 'en', 'en']
-        for index, topic in enumerate(topics):
-            topic.language_code = language_codes[index]
-            topic.add_additional_story('%s' % (index * 2))
-            topic.add_canonical_story('%s' % (index * 2 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 2))
-            topic_services.save_new_topic(self.owner_id, topic)
-            if index == 0:
-                committer_id = self.user_id
-            else:
-                committer_id = self.owner_id
-            topic_services.update_topic_and_subtopic_pages(
-                committer_id, '%s' % index, [topic_domain.TopicChange({
-                    'cmd': 'add_subtopic',
-                    'title': 'subtopic1',
-                    'subtopic_id': 1
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3)
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3 + 1)
-                })], 'Changes.')
-
-        self.model_instance_0 = (
-            subtopic_models.SubtopicPageSnapshotMetadataModel.get_by_id(
-                '0-1-1'))
-        self.model_instance_1 = (
-            subtopic_models.SubtopicPageSnapshotMetadataModel.get_by_id(
-                '1-1-1'))
-        self.model_instance_2 = (
-            subtopic_models.SubtopicPageSnapshotMetadataModel.get_by_id(
-                '2-1-1'))
-
-        self.job_class = (
-            prod_validation_jobs_one_off
-            .SubtopicPageSnapshotMetadataModelAuditOneOffJob)
-
-    def test_standard_operation(self):
-        topic_services.update_topic_and_subtopic_pages(
-            self.owner_id, '0', [subtopic_page_domain.SubtopicPageChange({
-                'cmd': 'update_subtopic_page_property',
-                'property_name': 'page_contents_html',
-                'subtopic_id': 1,
-                'new_value': {
-                    'html': '<p>html</p>',
-                    'content_id': 'content'
-                },
-                'old_value': {}
-            })], 'Changes.')
-        expected_output = [
-            u'[u\'fully-validated SubtopicPageSnapshotMetadataModel\', 4]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=False, literal_eval=False)
 
@@ -679,17 +303,7 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
         self.model_instance_1.put()
 
         expected_output = [
-<<<<<<< HEAD
-<<<<<<< HEAD
             u'[u\'fully-validated ExplorationSnapshotMetadataModel\', 3]']
-=======
-            u'[u\'fully-validated SubtopicPageSnapshotMetadataModel\', 3]'
-        ]
->>>>>>> upstream/develop
-=======
-            u'[u\'fully-validated SubtopicPageSnapshotMetadataModel\', 3]'
-        ]
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=False, literal_eval=False)
 
@@ -699,17 +313,7 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
         self.model_instance_1.put()
 
         expected_output = [
-<<<<<<< HEAD
-<<<<<<< HEAD
             u'[u\'fully-validated ExplorationSnapshotMetadataModel\', 3]']
-=======
-            u'[u\'fully-validated SubtopicPageSnapshotMetadataModel\', 3]'
-        ]
->>>>>>> upstream/develop
-=======
-            u'[u\'fully-validated SubtopicPageSnapshotMetadataModel\', 3]'
-        ]
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=False, literal_eval=False)
 
@@ -720,15 +324,7 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
         self.model_instance_0.put()
         expected_output = [(
             u'[u\'failed validation check for time field relation check '
-<<<<<<< HEAD
-<<<<<<< HEAD
             'of ExplorationSnapshotMetadataModel\', '
-=======
-            'of SubtopicPageSnapshotMetadataModel\', '
->>>>>>> upstream/develop
-=======
-            'of SubtopicPageSnapshotMetadataModel\', '
->>>>>>> upstream/develop
             '[u\'Entity id %s: The created_on field has a value '
             '%s which is greater than the value '
             '%s of last_updated field\']]') % (
@@ -737,15 +333,7 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
                 self.model_instance_0.last_updated
             ), (
                 u'[u\'fully-validated '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'ExplorationSnapshotMetadataModel\', 2]')]
-=======
-                'SubtopicPageSnapshotMetadataModel\', 2]')]
->>>>>>> upstream/develop
-=======
-                'SubtopicPageSnapshotMetadataModel\', 2]')]
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
@@ -754,15 +342,7 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
         self.model_instance_2.delete()
         expected_output = [(
             u'[u\'failed validation check for current time check of '
-<<<<<<< HEAD
-<<<<<<< HEAD
             'ExplorationSnapshotMetadataModel\', '
-=======
-            'SubtopicPageSnapshotMetadataModel\', '
->>>>>>> upstream/develop
-=======
-            'SubtopicPageSnapshotMetadataModel\', '
->>>>>>> upstream/develop
             '[u\'Entity id %s: The last_updated field has a '
             'value %s which is greater than the time when the job was run\']]'
         ) % (self.model_instance_0.id, self.model_instance_0.last_updated)]
@@ -773,8 +353,6 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
             self.run_job_and_check_output(
                 expected_output, sort=True, literal_eval=False)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     def test_missing_exploration_model_failure(self):
         exp_models.ExplorationModel.get_by_id('0').delete(
             self.user_id, '', [])
@@ -790,28 +368,6 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
             ), (
                 u'[u\'fully-validated '
                 'ExplorationSnapshotMetadataModel\', 2]')]
-=======
-=======
->>>>>>> upstream/develop
-    def test_missing_subtopic_page_model_failure(self):
-        subtopic_models.SubtopicPageModel.get_by_id('0-1').delete(
-            self.user_id, '', [])
-        expected_output = [
-            (
-                u'[u\'failed validation check for subtopic_page_ids '
-                'field check of SubtopicPageSnapshotMetadataModel\', '
-                '[u"Entity id 0-1-1: based on field subtopic_page_ids '
-                'having value 0-1, expected model SubtopicPageModel with '
-                'id 0-1 but it doesn\'t exist", u"Entity id 0-1-2: based '
-                'on field subtopic_page_ids having value 0-1, expected model '
-                'SubtopicPageModel with id 0-1 but it doesn\'t exist"]]'
-            ), (
-                u'[u\'fully-validated '
-                'SubtopicPageSnapshotMetadataModel\', 2]')]
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, literal_eval=True)
 
@@ -820,24 +376,12 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
         expected_output = [
             (
                 u'[u\'failed validation check for committer_ids field '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'check of ExplorationSnapshotMetadataModel\', '
                 '[u"Entity id 0-1: based on field committer_ids having '
-=======
-                'check of SubtopicPageSnapshotMetadataModel\', '
-                '[u"Entity id 0-1-1: based on field committer_ids having '
->>>>>>> upstream/develop
-=======
-                'check of SubtopicPageSnapshotMetadataModel\', '
-                '[u"Entity id 0-1-1: based on field committer_ids having '
->>>>>>> upstream/develop
                 'value %s, expected model UserSettingsModel with id %s '
                 'but it doesn\'t exist"]]'
             ) % (self.user_id, self.user_id), (
                 u'[u\'fully-validated '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'ExplorationSnapshotMetadataModel\', 2]')]
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
@@ -846,28 +390,11 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
         model_with_invalid_version_in_id = (
             exp_models.ExplorationSnapshotMetadataModel(
                 id='0-3', committer_id=self.owner_id, commit_type='edit',
-=======
-=======
->>>>>>> upstream/develop
-                'SubtopicPageSnapshotMetadataModel\', 2]')]
-        self.run_job_and_check_output(
-            expected_output, sort=True, literal_eval=False)
-
-    def test_invalid_subtopic_page_version_in_model_id(self):
-        model_with_invalid_version_in_id = (
-            subtopic_models.SubtopicPageSnapshotMetadataModel(
-                id='0-1-3', committer_id=self.owner_id, commit_type='edit',
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
                 commit_message='msg', commit_cmds=[{}]))
         model_with_invalid_version_in_id.update_timestamps()
         model_with_invalid_version_in_id.put()
         expected_output = [
             (
-<<<<<<< HEAD
-<<<<<<< HEAD
                 u'[u\'failed validation check for exploration model '
                 'version check of ExplorationSnapshotMetadataModel\', '
                 '[u\'Entity id 0-3: Exploration model corresponding to '
@@ -875,45 +402,21 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
                 'snapshot metadata model id\']]'
             ), (
                 u'[u\'fully-validated ExplorationSnapshotMetadataModel\', '
-=======
-=======
->>>>>>> upstream/develop
-                u'[u\'failed validation check for subtopic page model '
-                'version check of SubtopicPageSnapshotMetadataModel\', '
-                '[u\'Entity id 0-1-3: SubtopicPage model corresponding to '
-                'id 0-1 has a version 1 which is less than the version 3 in '
-                'snapshot metadata model id\']]'
-            ), (
-                u'[u\'fully-validated SubtopicPageSnapshotMetadataModel\', '
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
                 '3]')]
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
     def test_model_with_invalid_commit_cmd_schmea(self):
         self.model_instance_0.commit_cmds = [{
-<<<<<<< HEAD
-<<<<<<< HEAD
             'cmd': 'add_state'
         }, {
             'cmd': 'delete_state',
-=======
-            'cmd': 'create_new',
->>>>>>> upstream/develop
-=======
-            'cmd': 'create_new',
->>>>>>> upstream/develop
             'invalid_attribute': 'invalid'
         }]
         self.model_instance_0.update_timestamps()
         self.model_instance_0.put()
         expected_output = [
             (
-<<<<<<< HEAD
-<<<<<<< HEAD
                 u'[u\'failed validation check for commit '
                 'cmd delete_state check of '
                 'ExplorationSnapshotMetadataModel\', '
@@ -989,28 +492,10 @@ class SubtopicPageSnapshotMetadataModelValidatorTests(
                 '[u\'Entity id 0-1: Commit message larger than '
                 'accepted length\']]'
             ), u'[u\'fully-validated ExplorationSnapshotMetadataModel\', 2]']
-=======
-=======
->>>>>>> upstream/develop
-                u'[u\'failed validation check for commit cmd create_new '
-                'check of SubtopicPageSnapshotMetadataModel\', '
-                '[u"Entity id 0-1-1: Commit command domain validation '
-                'for command: {u\'cmd\': u\'create_new\', '
-                'u\'invalid_attribute\': u\'invalid\'} failed with error: '
-                'The following required attributes are missing: '
-                'subtopic_id, topic_id, The following extra attributes '
-                'are present: invalid_attribute"]]'
-            ), u'[u\'fully-validated SubtopicPageSnapshotMetadataModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 class ExplorationSnapshotContentModelValidatorTests(
         test_utils.AuditJobsTestBase):
 
@@ -1052,113 +537,6 @@ class ExplorationSnapshotContentModelValidatorTests(
             })], 'Changes.')
         expected_output = [
             u'[u\'fully-validated ExplorationSnapshotContentModel\', 4]']
-=======
-=======
->>>>>>> upstream/develop
-class SubtopicPageSnapshotContentModelValidatorTests(
-        test_utils.AuditJobsTestBase):
-
-    def setUp(self):
-        super(SubtopicPageSnapshotContentModelValidatorTests, self).setUp()
-        self.signup(self.OWNER_EMAIL, self.OWNER_USERNAME)
-        self.owner_id = self.get_user_id_from_email(self.OWNER_EMAIL)
-
-        self.signup(USER_EMAIL, USER_NAME)
-        self.user_id = self.get_user_id_from_email(USER_EMAIL)
-
-        self.signup(self.ADMIN_EMAIL, self.ADMIN_USERNAME)
-        self.admin_id = self.get_user_id_from_email(self.ADMIN_EMAIL)
-        self.set_admins([self.ADMIN_USERNAME])
-
-        topics = [topic_domain.Topic.create_default_topic(
-            '%s' % i,
-            'topic%s' % i,
-            'abbrev-%s' % chr(120 + i),
-            'description%s' % i) for i in python_utils.RANGE(3)]
-        rubrics = [
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[0], ['Explanation 1']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[1], ['Explanation 2']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[2], ['Explanation 3'])]
-        skills = [
-            skill_domain.Skill.create_default_skill(
-                '%s' % i, 'skill%s' % i, rubrics)
-            for i in python_utils.RANGE(9)]
-
-        for skill in skills:
-            skill_services.save_new_skill(self.owner_id, skill)
-
-        stories = [story_domain.Story.create_default_story(
-            '%s' % i,
-            'title %d',
-            'description %d' % i,
-            '%s' % (python_utils.divide(i, 2)),
-            'title-%s' % chr(97 + i)
-        ) for i in python_utils.RANGE(6)]
-
-        for story in stories:
-            story_services.save_new_story(self.owner_id, story)
-
-        language_codes = ['ar', 'en', 'en']
-        for index, topic in enumerate(topics):
-            topic.language_code = language_codes[index]
-            topic.add_additional_story('%s' % (index * 2))
-            topic.add_canonical_story('%s' % (index * 2 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 2))
-            topic_services.save_new_topic(self.owner_id, topic)
-            topic_services.update_topic_and_subtopic_pages(
-                self.owner_id, '%s' % index, [topic_domain.TopicChange({
-                    'cmd': 'add_subtopic',
-                    'title': 'subtopic1',
-                    'subtopic_id': 1
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3)
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3 + 1)
-                })], 'Changes.')
-
-        self.model_instance_0 = (
-            subtopic_models.SubtopicPageSnapshotContentModel.get_by_id(
-                '0-1-1'))
-        self.model_instance_1 = (
-            subtopic_models.SubtopicPageSnapshotContentModel.get_by_id(
-                '1-1-1'))
-        self.model_instance_2 = (
-            subtopic_models.SubtopicPageSnapshotContentModel.get_by_id(
-                '2-1-1'))
-
-        self.job_class = (
-            prod_validation_jobs_one_off
-            .SubtopicPageSnapshotContentModelAuditOneOffJob)
-
-    def test_standard_operation(self):
-        topic_services.update_topic_and_subtopic_pages(
-            self.owner_id, '0', [subtopic_page_domain.SubtopicPageChange({
-                'cmd': 'update_subtopic_page_property',
-                'property_name': 'page_contents_html',
-                'subtopic_id': 1,
-                'new_value': {
-                    'html': '<p>html</p>',
-                    'content_id': 'content'
-                },
-                'old_value': {}
-            })], 'Changes.')
-        expected_output = [
-            u'[u\'fully-validated SubtopicPageSnapshotContentModel\', 4]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=False, literal_eval=False)
 
@@ -1169,15 +547,7 @@ class SubtopicPageSnapshotContentModelValidatorTests(
         self.model_instance_0.put()
         expected_output = [(
             u'[u\'failed validation check for time field relation check '
-<<<<<<< HEAD
-<<<<<<< HEAD
             'of ExplorationSnapshotContentModel\', '
-=======
-            'of SubtopicPageSnapshotContentModel\', '
->>>>>>> upstream/develop
-=======
-            'of SubtopicPageSnapshotContentModel\', '
->>>>>>> upstream/develop
             '[u\'Entity id %s: The created_on field has a value '
             '%s which is greater than the value '
             '%s of last_updated field\']]') % (
@@ -1186,15 +556,7 @@ class SubtopicPageSnapshotContentModelValidatorTests(
                 self.model_instance_0.last_updated
             ), (
                 u'[u\'fully-validated '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'ExplorationSnapshotContentModel\', 2]')]
-=======
-                'SubtopicPageSnapshotContentModel\', 2]')]
->>>>>>> upstream/develop
-=======
-                'SubtopicPageSnapshotContentModel\', 2]')]
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
@@ -1203,15 +565,7 @@ class SubtopicPageSnapshotContentModelValidatorTests(
         self.model_instance_2.delete()
         expected_output = [(
             u'[u\'failed validation check for current time check of '
-<<<<<<< HEAD
-<<<<<<< HEAD
             'ExplorationSnapshotContentModel\', '
-=======
-            'SubtopicPageSnapshotContentModel\', '
->>>>>>> upstream/develop
-=======
-            'SubtopicPageSnapshotContentModel\', '
->>>>>>> upstream/develop
             '[u\'Entity id %s: The last_updated field has a '
             'value %s which is greater than the time when the job was run\']]'
         ) % (self.model_instance_0.id, self.model_instance_0.last_updated)]
@@ -1222,8 +576,6 @@ class SubtopicPageSnapshotContentModelValidatorTests(
             self.run_job_and_check_output(
                 expected_output, sort=True, literal_eval=False)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     def test_missing_exploration_model_failure(self):
         exp_models.ExplorationModel.get_by_id('0').delete(self.owner_id, '', [])
         expected_output = [
@@ -1246,40 +598,10 @@ class SubtopicPageSnapshotContentModelValidatorTests(
             exp_models.ExplorationSnapshotContentModel(
                 id='0-3'))
         model_with_invalid_version_in_id.content = {}
-=======
-=======
->>>>>>> upstream/develop
-    def test_missing_subtopic_page_model_failure(self):
-        subtopic_models.SubtopicPageModel.get_by_id('0-1').delete(
-            self.user_id, '', [])
-        expected_output = [
-            (
-                u'[u\'failed validation check for subtopic_page_ids '
-                'field check of SubtopicPageSnapshotContentModel\', '
-                '[u"Entity id 0-1-1: based on field subtopic_page_ids '
-                'having value 0-1, expected model SubtopicPageModel with '
-                'id 0-1 but it doesn\'t exist", u"Entity id 0-1-2: based '
-                'on field subtopic_page_ids having value 0-1, expected model '
-                'SubtopicPageModel with id 0-1 but it doesn\'t exist"]]'
-            ), (
-                u'[u\'fully-validated '
-                'SubtopicPageSnapshotContentModel\', 2]')]
-        self.run_job_and_check_output(
-            expected_output, literal_eval=True)
-
-    def test_invalid_subtopic_page_version_in_model_id(self):
-        model_with_invalid_version_in_id = (
-            subtopic_models.SubtopicPageSnapshotContentModel(id='0-1-3'))
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         model_with_invalid_version_in_id.update_timestamps()
         model_with_invalid_version_in_id.put()
         expected_output = [
             (
-<<<<<<< HEAD
-<<<<<<< HEAD
                 u'[u\'failed validation check for exploration model '
                 'version check of ExplorationSnapshotContentModel\', '
                 '[u\'Entity id 0-3: Exploration model corresponding to '
@@ -1287,27 +609,11 @@ class SubtopicPageSnapshotContentModelValidatorTests(
                 'the version 3 in snapshot content model id\']]'
             ), (
                 u'[u\'fully-validated ExplorationSnapshotContentModel\', '
-=======
-=======
->>>>>>> upstream/develop
-                u'[u\'failed validation check for subtopic page model '
-                'version check of SubtopicPageSnapshotContentModel\', '
-                '[u\'Entity id 0-1-3: SubtopicPage model corresponding to '
-                'id 0-1 has a version 1 which is less than the version 3 in '
-                'snapshot content model id\']]'
-            ), (
-                u'[u\'fully-validated SubtopicPageSnapshotContentModel\', '
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
                 '3]')]
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 class ExplorationRightsModelValidatorTests(test_utils.AuditJobsTestBase):
 
     def setUp(self):
@@ -1355,161 +661,23 @@ class ExplorationRightsModelValidatorTests(test_utils.AuditJobsTestBase):
         rights_manager.publish_exploration(self.owner, '0')
         expected_output = [
             u'[u\'fully-validated ExplorationRightsModel\', 3]']
-=======
-class SubtopicPageCommitLogEntryModelValidatorTests(
-        test_utils.AuditJobsTestBase):
-
-    def setUp(self):
-        super(SubtopicPageCommitLogEntryModelValidatorTests, self).setUp()
-
-        self.signup(self.OWNER_EMAIL, self.OWNER_USERNAME)
-        self.owner_id = self.get_user_id_from_email(self.OWNER_EMAIL)
-
-        self.signup(USER_EMAIL, USER_NAME)
-        self.user_id = self.get_user_id_from_email(USER_EMAIL)
-
-        self.signup(self.ADMIN_EMAIL, self.ADMIN_USERNAME)
-        self.admin_id = self.get_user_id_from_email(self.ADMIN_EMAIL)
-        self.set_admins([self.ADMIN_USERNAME])
-
-        topics = [topic_domain.Topic.create_default_topic(
-            '%s' % i,
-            'topic%s' % i,
-            'abbrev-%s' % chr(120 + i),
-            'description%s' % i) for i in python_utils.RANGE(3)]
-        rubrics = [
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[0], ['Explanation 1']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[1], ['Explanation 2']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[2], ['Explanation 3'])]
-        skills = [
-            skill_domain.Skill.create_default_skill(
-                '%s' % i, 'skill%s' % i, rubrics)
-            for i in python_utils.RANGE(9)]
-
-        for skill in skills:
-            skill_services.save_new_skill(self.owner_id, skill)
-
-        stories = [story_domain.Story.create_default_story(
-            '%s' % i,
-            'title %d',
-            'description %d' % i,
-            '%s' % (python_utils.divide(i, 2)),
-            'title-%s' % chr(97 + i)
-        ) for i in python_utils.RANGE(6)]
-
-        for story in stories:
-            story_services.save_new_story(self.owner_id, story)
-
-        language_codes = ['ar', 'en', 'en']
-        for index, topic in enumerate(topics):
-            topic.language_code = language_codes[index]
-            topic.add_additional_story('%s' % (index * 2))
-            topic.add_canonical_story('%s' % (index * 2 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 2))
-            topic_services.save_new_topic(self.owner_id, topic)
-            if index == 0:
-                committer_id = self.user_id
-            else:
-                committer_id = self.owner_id
-            topic_services.update_topic_and_subtopic_pages(
-                committer_id, '%s' % index, [topic_domain.TopicChange({
-                    'cmd': 'add_subtopic',
-                    'title': 'subtopic1',
-                    'subtopic_id': 1
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3)
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3 + 1)
-                })], 'Changes.')
-
-        self.model_instance_0 = (
-            subtopic_models.SubtopicPageCommitLogEntryModel.get_by_id(
-                'subtopicpage-0-1-1'))
-        self.model_instance_1 = (
-            subtopic_models.SubtopicPageCommitLogEntryModel.get_by_id(
-                'subtopicpage-1-1-1'))
-        self.model_instance_2 = (
-            subtopic_models.SubtopicPageCommitLogEntryModel.get_by_id(
-                'subtopicpage-2-1-1'))
-
-        self.job_class = (
-            prod_validation_jobs_one_off
-            .SubtopicPageCommitLogEntryModelAuditOneOffJob)
-
-    def test_standard_operation(self):
-        topic_services.update_topic_and_subtopic_pages(
-            self.owner_id, '0', [subtopic_page_domain.SubtopicPageChange({
-                'cmd': 'update_subtopic_page_property',
-                'property_name': 'page_contents_html',
-                'subtopic_id': 1,
-                'new_value': {
-                    'html': '<p>html</p>',
-                    'content_id': 'content'
-                },
-                'old_value': {}
-            })], 'Changes.')
-        expected_output = [
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 4]']
-        self.run_job_and_check_output(
-            expected_output, sort=False, literal_eval=False)
-
-    def test_model_with_user_id_migration_bot(self):
-        self.model_instance_1.user_id = feconf.MIGRATION_BOT_USER_ID
-        self.model_instance_1.update_timestamps(update_last_updated_time=False)
-        self.model_instance_1.put()
-
-        expected_output = [
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 3]'
-        ]
-        self.run_job_and_check_output(
-            expected_output, sort=False, literal_eval=False)
-
-    def test_model_with_pseudo_user_id(self):
-        self.model_instance_1.user_id = self.PSEUDONYMOUS_ID
-        self.model_instance_1.update_timestamps(update_last_updated_time=False)
-        self.model_instance_1.put()
-
-        expected_output = [
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 3]'
-        ]
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=False, literal_eval=False)
 
     def test_model_with_created_on_greater_than_last_updated(self):
         self.model_instance_0.created_on = (
             self.model_instance_0.last_updated + datetime.timedelta(days=1))
-<<<<<<< HEAD
         self.model_instance_0.commit(
             feconf.SYSTEM_COMMITTER_ID, 'created_on test', [])
         expected_output = [(
             u'[u\'failed validation check for time field relation check '
             'of ExplorationRightsModel\', '
-=======
-        self.model_instance_0.update_timestamps()
-        self.model_instance_0.put()
-        expected_output = [(
-            u'[u\'failed validation check for time field relation check '
-            'of SubtopicPageCommitLogEntryModel\', '
->>>>>>> upstream/develop
             '[u\'Entity id %s: The created_on field has a value '
             '%s which is greater than the value '
             '%s of last_updated field\']]') % (
                 self.model_instance_0.id,
                 self.model_instance_0.created_on,
                 self.model_instance_0.last_updated
-<<<<<<< HEAD
             ), u'[u\'fully-validated ExplorationRightsModel\', 2]']
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
@@ -1703,147 +871,22 @@ class ExplorationRightsSnapshotMetadataModelValidatorTests(
 
     def test_model_with_committer_id_migration_bot(self):
         self.model_instance_1.committer_id = feconf.MIGRATION_BOT_USER_ID
-=======
-class SubtopicPageCommitLogEntryModelValidatorTests(
-        test_utils.AuditJobsTestBase):
-
-    def setUp(self):
-        super(SubtopicPageCommitLogEntryModelValidatorTests, self).setUp()
-
-        self.signup(self.OWNER_EMAIL, self.OWNER_USERNAME)
-        self.owner_id = self.get_user_id_from_email(self.OWNER_EMAIL)
-
-        self.signup(USER_EMAIL, USER_NAME)
-        self.user_id = self.get_user_id_from_email(USER_EMAIL)
-
-        self.signup(self.ADMIN_EMAIL, self.ADMIN_USERNAME)
-        self.admin_id = self.get_user_id_from_email(self.ADMIN_EMAIL)
-        self.set_admins([self.ADMIN_USERNAME])
-
-        topics = [topic_domain.Topic.create_default_topic(
-            '%s' % i,
-            'topic%s' % i,
-            'abbrev-%s' % chr(120 + i),
-            'description%s' % i) for i in python_utils.RANGE(3)]
-        rubrics = [
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[0], ['Explanation 1']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[1], ['Explanation 2']),
-            skill_domain.Rubric(
-                constants.SKILL_DIFFICULTIES[2], ['Explanation 3'])]
-        skills = [
-            skill_domain.Skill.create_default_skill(
-                '%s' % i, 'skill%s' % i, rubrics)
-            for i in python_utils.RANGE(9)]
-
-        for skill in skills:
-            skill_services.save_new_skill(self.owner_id, skill)
-
-        stories = [story_domain.Story.create_default_story(
-            '%s' % i,
-            'title %d',
-            'description %d' % i,
-            '%s' % (python_utils.divide(i, 2)),
-            'title-%s' % chr(97 + i)
-        ) for i in python_utils.RANGE(6)]
-
-        for story in stories:
-            story_services.save_new_story(self.owner_id, story)
-
-        language_codes = ['ar', 'en', 'en']
-        for index, topic in enumerate(topics):
-            topic.language_code = language_codes[index]
-            topic.add_additional_story('%s' % (index * 2))
-            topic.add_canonical_story('%s' % (index * 2 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 1))
-            topic.add_uncategorized_skill_id('%s' % (index * 3 + 2))
-            topic_services.save_new_topic(self.owner_id, topic)
-            if index == 0:
-                committer_id = self.user_id
-            else:
-                committer_id = self.owner_id
-            topic_services.update_topic_and_subtopic_pages(
-                committer_id, '%s' % index, [topic_domain.TopicChange({
-                    'cmd': 'add_subtopic',
-                    'title': 'subtopic1',
-                    'subtopic_id': 1
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3)
-                }), topic_domain.TopicChange({
-                    'cmd': 'move_skill_id_to_subtopic',
-                    'old_subtopic_id': None,
-                    'new_subtopic_id': 1,
-                    'skill_id': '%s' % (index * 3 + 1)
-                })], 'Changes.')
-
-        self.model_instance_0 = (
-            subtopic_models.SubtopicPageCommitLogEntryModel.get_by_id(
-                'subtopicpage-0-1-1'))
-        self.model_instance_1 = (
-            subtopic_models.SubtopicPageCommitLogEntryModel.get_by_id(
-                'subtopicpage-1-1-1'))
-        self.model_instance_2 = (
-            subtopic_models.SubtopicPageCommitLogEntryModel.get_by_id(
-                'subtopicpage-2-1-1'))
-
-        self.job_class = (
-            prod_validation_jobs_one_off
-            .SubtopicPageCommitLogEntryModelAuditOneOffJob)
-
-    def test_standard_operation(self):
-        topic_services.update_topic_and_subtopic_pages(
-            self.owner_id, '0', [subtopic_page_domain.SubtopicPageChange({
-                'cmd': 'update_subtopic_page_property',
-                'property_name': 'page_contents_html',
-                'subtopic_id': 1,
-                'new_value': {
-                    'html': '<p>html</p>',
-                    'content_id': 'content'
-                },
-                'old_value': {}
-            })], 'Changes.')
-        expected_output = [
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 4]']
-        self.run_job_and_check_output(
-            expected_output, sort=False, literal_eval=False)
-
-    def test_model_with_user_id_migration_bot(self):
-        self.model_instance_1.user_id = feconf.MIGRATION_BOT_USER_ID
->>>>>>> upstream/develop
         self.model_instance_1.update_timestamps(update_last_updated_time=False)
         self.model_instance_1.put()
 
         expected_output = [
-<<<<<<< HEAD
             u'[u\'fully-validated ExplorationRightsSnapshotMetadataModel\', 3]'
-=======
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 3]'
->>>>>>> upstream/develop
         ]
         self.run_job_and_check_output(
             expected_output, sort=False, literal_eval=False)
 
-<<<<<<< HEAD
     def test_model_with_pseudo_committer_id(self):
         self.model_instance_1.committer_id = self.PSEUDONYMOUS_ID
-=======
-    def test_model_with_pseudo_user_id(self):
-        self.model_instance_1.user_id = self.PSEUDONYMOUS_ID
->>>>>>> upstream/develop
         self.model_instance_1.update_timestamps(update_last_updated_time=False)
         self.model_instance_1.put()
 
         expected_output = [
-<<<<<<< HEAD
             u'[u\'fully-validated ExplorationRightsSnapshotMetadataModel\', 3]'
-=======
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 3]'
->>>>>>> upstream/develop
         ]
         self.run_job_and_check_output(
             expected_output, sort=False, literal_eval=False)
@@ -1855,24 +898,16 @@ class SubtopicPageCommitLogEntryModelValidatorTests(
         self.model_instance_0.put()
         expected_output = [(
             u'[u\'failed validation check for time field relation check '
-<<<<<<< HEAD
             'of ExplorationRightsSnapshotMetadataModel\', '
-=======
-            'of SubtopicPageCommitLogEntryModel\', '
->>>>>>> upstream/develop
             '[u\'Entity id %s: The created_on field has a value '
             '%s which is greater than the value '
             '%s of last_updated field\']]') % (
                 self.model_instance_0.id,
                 self.model_instance_0.created_on,
                 self.model_instance_0.last_updated
-<<<<<<< HEAD
             ), (
                 u'[u\'fully-validated '
                 'ExplorationRightsSnapshotMetadataModel\', 2]')]
-=======
-            ), u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 2]']
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
@@ -1881,11 +916,7 @@ class SubtopicPageCommitLogEntryModelValidatorTests(
         self.model_instance_2.delete()
         expected_output = [(
             u'[u\'failed validation check for current time check of '
-<<<<<<< HEAD
             'ExplorationRightsSnapshotMetadataModel\', '
-=======
-            'SubtopicPageCommitLogEntryModel\', '
->>>>>>> upstream/develop
             '[u\'Entity id %s: The last_updated field has a '
             'value %s which is greater than the time when the job was run\']]'
         ) % (self.model_instance_0.id, self.model_instance_0.last_updated)]
@@ -1896,7 +927,6 @@ class SubtopicPageCommitLogEntryModelValidatorTests(
             self.run_job_and_check_output(
                 expected_output, sort=True, literal_eval=False)
 
-<<<<<<< HEAD
     def test_missing_exploration_rights_model_failure(self):
         exp_models.ExplorationRightsModel.get_by_id('0').delete(
             self.user_id, '', [])
@@ -1935,36 +965,10 @@ class SubtopicPageCommitLogEntryModelValidatorTests(
             exp_models.ExplorationRightsSnapshotMetadataModel(
                 id='0-3', committer_id=self.owner_id, commit_type='edit',
                 commit_message='msg', commit_cmds=[{}]))
-=======
-    def test_missing_subtopic_page_model_failure(self):
-        subtopic_models.SubtopicPageModel.get_by_id('0-1').delete(
-            feconf.SYSTEM_COMMITTER_ID, '', [])
-        expected_output = [
-            (
-                u'[u\'failed validation check for subtopic_page_ids '
-                'field check of SubtopicPageCommitLogEntryModel\', '
-                '[u"Entity id subtopicpage-0-1-1: based on field '
-                'subtopic_page_ids having value 0-1, expected model '
-                'SubtopicPageModel with id 0-1 but it doesn\'t exist", '
-                'u"Entity id subtopicpage-0-1-2: based on field '
-                'subtopic_page_ids having value 0-1, expected model '
-                'SubtopicPageModel with id 0-1 but it doesn\'t exist"]]'
-            ), u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 2]']
-        self.run_job_and_check_output(
-            expected_output, sort=False, literal_eval=True)
-
-    def test_invalid_topic_version_in_model_id(self):
-        model_with_invalid_version_in_id = (
-            subtopic_models.SubtopicPageCommitLogEntryModel.create(
-                '0-1', 3, self.owner_id, 'edit', 'msg', [{}],
-                constants.ACTIVITY_STATUS_PUBLIC, False))
-        model_with_invalid_version_in_id.subtopic_page_id = '0-1'
->>>>>>> upstream/develop
         model_with_invalid_version_in_id.update_timestamps()
         model_with_invalid_version_in_id.put()
         expected_output = [
             (
-<<<<<<< HEAD
                 u'[u\'failed validation check for exploration rights model '
                 'version check of ExplorationRightsSnapshotMetadataModel\', '
                 '[u\'Entity id 0-3: ExplorationRights model corresponding to '
@@ -2222,25 +1226,16 @@ class ExplorationCommitLogEntryModelValidatorTests(
                 self.model_instance_0.created_on,
                 self.model_instance_0.last_updated
             ), u'[u\'fully-validated ExplorationCommitLogEntryModel\', 3]']
-=======
-            ), u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 2]']
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
     def test_model_with_last_updated_greater_than_current_time(self):
         self.model_instance_1.delete()
         self.model_instance_2.delete()
-<<<<<<< HEAD
         self.rights_model_instance.delete()
         expected_output = [(
             u'[u\'failed validation check for current time check of '
             'ExplorationCommitLogEntryModel\', '
-=======
-        expected_output = [(
-            u'[u\'failed validation check for current time check of '
-            'SubtopicPageCommitLogEntryModel\', '
->>>>>>> upstream/develop
             '[u\'Entity id %s: The last_updated field has a '
             'value %s which is greater than the time when the job was run\']]'
         ) % (self.model_instance_0.id, self.model_instance_0.last_updated)]
@@ -2251,7 +1246,6 @@ class ExplorationCommitLogEntryModelValidatorTests(
             self.run_job_and_check_output(
                 expected_output, sort=True, literal_eval=False)
 
-<<<<<<< HEAD
     def test_missing_exploration_model_failure(self):
         exp_models.ExplorationModel.get_by_id('0').delete(
             feconf.SYSTEM_COMMITTER_ID, '', [])
@@ -2289,36 +1283,10 @@ class ExplorationCommitLogEntryModelValidatorTests(
                 '0', 3, self.owner_id, 'edit', 'msg', [{}],
                 constants.ACTIVITY_STATUS_PUBLIC, False))
         model_with_invalid_version_in_id.exploration_id = '0'
-=======
-    def test_missing_subtopic_page_model_failure(self):
-        subtopic_models.SubtopicPageModel.get_by_id('0-1').delete(
-            feconf.SYSTEM_COMMITTER_ID, '', [])
-        expected_output = [
-            (
-                u'[u\'failed validation check for subtopic_page_ids '
-                'field check of SubtopicPageCommitLogEntryModel\', '
-                '[u"Entity id subtopicpage-0-1-1: based on field '
-                'subtopic_page_ids having value 0-1, expected model '
-                'SubtopicPageModel with id 0-1 but it doesn\'t exist", '
-                'u"Entity id subtopicpage-0-1-2: based on field '
-                'subtopic_page_ids having value 0-1, expected model '
-                'SubtopicPageModel with id 0-1 but it doesn\'t exist"]]'
-            ), u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 2]']
-        self.run_job_and_check_output(
-            expected_output, sort=False, literal_eval=True)
-
-    def test_invalid_topic_version_in_model_id(self):
-        model_with_invalid_version_in_id = (
-            subtopic_models.SubtopicPageCommitLogEntryModel.create(
-                '0-1', 3, self.owner_id, 'edit', 'msg', [{}],
-                constants.ACTIVITY_STATUS_PUBLIC, False))
-        model_with_invalid_version_in_id.subtopic_page_id = '0-1'
->>>>>>> upstream/develop
         model_with_invalid_version_in_id.update_timestamps()
         model_with_invalid_version_in_id.put()
         expected_output = [
             (
-<<<<<<< HEAD
                 u'[u\'failed validation check for exploration model '
                 'version check of ExplorationCommitLogEntryModel\', '
                 '[u\'Entity id %s: Exploration model corresponding '
@@ -2326,59 +1294,25 @@ class ExplorationCommitLogEntryModelValidatorTests(
                 'the version 3 in commit log entry model id\']]'
             ) % (model_with_invalid_version_in_id.id),
             u'[u\'fully-validated ExplorationCommitLogEntryModel\', 4]']
-=======
-=======
->>>>>>> upstream/develop
-                u'[u\'failed validation check for subtopic page model '
-                'version check of SubtopicPageCommitLogEntryModel\', '
-                '[u\'Entity id %s: SubtopicPage model corresponding '
-                'to id 0-1 has a version 1 which is less than '
-                'the version 3 in commit log entry model id\']]'
-            ) % (model_with_invalid_version_in_id.id),
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 3]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
     def test_model_with_invalid_id(self):
         model_with_invalid_id = (
-<<<<<<< HEAD
-<<<<<<< HEAD
             exp_models.ExplorationCommitLogEntryModel(
                 id='invalid-0-1',
-=======
-            subtopic_models.SubtopicPageCommitLogEntryModel(
-                id='invalid-0-1-1',
->>>>>>> upstream/develop
-=======
-            subtopic_models.SubtopicPageCommitLogEntryModel(
-                id='invalid-0-1-1',
->>>>>>> upstream/develop
                 user_id=self.owner_id,
                 commit_type='edit',
                 commit_message='msg',
                 commit_cmds=[{}],
                 post_commit_status=constants.ACTIVITY_STATUS_PUBLIC,
                 post_commit_is_private=False))
-<<<<<<< HEAD
-<<<<<<< HEAD
         model_with_invalid_id.exploration_id = '0'
-=======
-        model_with_invalid_id.subtopic_page_id = '0-1'
->>>>>>> upstream/develop
-=======
-        model_with_invalid_id.subtopic_page_id = '0-1'
->>>>>>> upstream/develop
         model_with_invalid_id.update_timestamps()
         model_with_invalid_id.put()
         expected_output = [
             (
                 u'[u\'failed validation check for model id check of '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'ExplorationCommitLogEntryModel\', '
                 '[u\'Entity id %s: Entity id does not match regex pattern\']]'
             ) % (model_with_invalid_id.id), (
@@ -2387,21 +1321,6 @@ class ExplorationCommitLogEntryModelValidatorTests(
                 'No commit command domain object defined for entity with '
                 'commands: [{}]\']]'),
             u'[u\'fully-validated ExplorationCommitLogEntryModel\', 4]']
-=======
-=======
->>>>>>> upstream/develop
-                'SubtopicPageCommitLogEntryModel\', '
-                '[u\'Entity id %s: Entity id does not match regex pattern\']]'
-            ) % (model_with_invalid_id.id), (
-                u'[u\'failed validation check for commit cmd check of '
-                'SubtopicPageCommitLogEntryModel\', [u\'Entity id '
-                'invalid-0-1-1: No commit command domain object defined '
-                'for entity with commands: [{}]\']]'),
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 3]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
@@ -2412,23 +1331,10 @@ class ExplorationCommitLogEntryModelValidatorTests(
         expected_output = [
             (
                 u'[u\'failed validation check for commit type check of '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'ExplorationCommitLogEntryModel\', '
                 '[u\'Entity id exploration-0-1: Commit type invalid is '
                 'not allowed\']]'
             ), u'[u\'fully-validated ExplorationCommitLogEntryModel\', 3]']
-=======
-=======
->>>>>>> upstream/develop
-                'SubtopicPageCommitLogEntryModel\', '
-                '[u\'Entity id subtopicpage-0-1-1: Commit type invalid is '
-                'not allowed\']]'
-            ), u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
@@ -2439,23 +1345,10 @@ class ExplorationCommitLogEntryModelValidatorTests(
         expected_output = [
             (
                 u'[u\'failed validation check for post commit status check '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'of ExplorationCommitLogEntryModel\', '
                 '[u\'Entity id exploration-0-1: Post commit status invalid '
                 'is invalid\']]'
             ), u'[u\'fully-validated ExplorationCommitLogEntryModel\', 3]']
-=======
-=======
->>>>>>> upstream/develop
-                'of SubtopicPageCommitLogEntryModel\', '
-                '[u\'Entity id subtopicpage-0-1-1: Post commit status invalid '
-                'is invalid\']]'
-            ), u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
@@ -2468,25 +1361,11 @@ class ExplorationCommitLogEntryModelValidatorTests(
         expected_output = [
             (
                 u'[u\'failed validation check for post commit is private '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'check of ExplorationCommitLogEntryModel\', '
                 '[u\'Entity id %s: Post commit status is '
                 'public but post_commit_is_private is True\']]'
             ) % self.model_instance_0.id,
             u'[u\'fully-validated ExplorationCommitLogEntryModel\', 3]']
-=======
-=======
->>>>>>> upstream/develop
-                'check of SubtopicPageCommitLogEntryModel\', '
-                '[u\'Entity id %s: Post commit status is '
-                'public but post_commit_is_private is True\']]'
-            ) % self.model_instance_0.id,
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
@@ -2499,49 +1378,25 @@ class ExplorationCommitLogEntryModelValidatorTests(
         expected_output = [
             (
                 u'[u\'failed validation check for post commit is private '
-<<<<<<< HEAD
-<<<<<<< HEAD
                 'check of ExplorationCommitLogEntryModel\', '
                 '[u\'Entity id %s: Post commit status is '
                 'private but post_commit_is_private is False\']]'
             ) % self.model_instance_0.id,
             u'[u\'fully-validated ExplorationCommitLogEntryModel\', 3]']
-=======
-=======
->>>>>>> upstream/develop
-                'check of SubtopicPageCommitLogEntryModel\', '
-                '[u\'Entity id %s: Post commit status is '
-                'private but post_commit_is_private is False\']]'
-            ) % self.model_instance_0.id,
-            u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 2]']
-<<<<<<< HEAD
->>>>>>> upstream/develop
-=======
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
 
     def test_model_with_invalid_commit_cmd_schmea(self):
         self.model_instance_0.commit_cmds = [{
-<<<<<<< HEAD
-<<<<<<< HEAD
             'cmd': 'add_state'
         }, {
             'cmd': 'delete_state',
-=======
-            'cmd': 'create_new',
->>>>>>> upstream/develop
-=======
-            'cmd': 'create_new',
->>>>>>> upstream/develop
             'invalid_attribute': 'invalid'
         }]
         self.model_instance_0.update_timestamps()
         self.model_instance_0.put()
         expected_output = [
             (
-<<<<<<< HEAD
-<<<<<<< HEAD
                 u'[u\'failed validation check for commit cmd '
                 'delete_state check of '
                 'ExplorationCommitLogEntryModel\', '
@@ -2984,18 +1839,5 @@ class ExplorationContextModelValidatorTests(test_utils.AuditJobsTestBase):
                 'exp_ids having value 2, expected model ExplorationModel '
                 'with id 2 but it doesn\'t exist"]]'),
             u'[u\'fully-validated ExplorationContextModel\', 2]']
-=======
-=======
->>>>>>> upstream/develop
-                u'[u\'failed validation check for commit cmd create_new '
-                'check of SubtopicPageCommitLogEntryModel\', '
-                '[u"Entity id subtopicpage-0-1-1: Commit command domain '
-                'validation for command: {u\'cmd\': u\'create_new\', '
-                'u\'invalid_attribute\': u\'invalid\'} failed with error: '
-                'The following required attributes are missing: '
-                'subtopic_id, topic_id, The following extra attributes '
-                'are present: invalid_attribute"]]'
-            ), u'[u\'fully-validated SubtopicPageCommitLogEntryModel\', 2]']
->>>>>>> upstream/develop
         self.run_job_and_check_output(
             expected_output, sort=True, literal_eval=False)
